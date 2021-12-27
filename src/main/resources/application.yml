@@ -1,0 +1,36 @@
+spring.security.oauth2.client:
+    registration:
+      google:
+        client-id: *****
+        client-secret: *****
+      instagram:
+        provider: instagram
+        client-name: instagram
+        client-id: ******
+        client-secret: ******
+        redirect-uri: *****
+        authorization-grant-type: authorization_code
+        client-authentication-method: form
+        scope: ****, ****
+    provider:
+      instagram:
+        authorization-uri: https://www.linkedin.com/oauth/v2/authorization
+        token-uri: https://www.linkedin.com/oauth/v2/accessToken
+        user-info-uri: https://api.linkedin.com/v2/me
+        user-info-authentication-method: post
+
+
+
+
+spring.security.oauth2.client.registration.linkedin.provider=linkedin
+spring.security.oauth2.client.registration.linkedin.client-name=Linkedin
+spring.security.oauth2.client.registration.linkedin.client-id=******
+spring.security.oauth2.client.registration.linkedin.client-secret=******
+spring.security.oauth2.client.registration.linkedin.redirect-uri=*****
+spring.security.oauth2.client.registration.linkedin.authorization-grant-type=authorization_code
+spring.security.oauth2.client.registration.linkedin.client-authentication-method=form
+spring.security.oauth2.client.registration.linkedin.scope=r_emailaddress,r_liteprofile
+spring.security.oauth2.client.provider.linkedin.authorization-uri=https://www.linkedin.com/oauth/v2/authorization
+spring.security.oauth2.client.provider.linkedin.token-uri=https://www.linkedin.com/oauth/v2/accessToken
+spring.security.oauth2.client.provider.linkedin.user-info-uri=https://api.linkedin.com/v2/me
+spring.security.oauth2.client.provider.linkedin.user-info-authentication-method=post
