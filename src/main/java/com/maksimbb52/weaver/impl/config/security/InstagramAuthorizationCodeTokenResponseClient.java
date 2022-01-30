@@ -86,8 +86,9 @@ public class InstagramAuthorizationCodeTokenResponseClient implements OAuth2Acce
     }
 
     private ResponseEntity<OAuth2AccessTokenResponse> getResponse(RequestEntity<?> request) {
+        ResponseEntity<OAuth2AccessTokenResponse> response;
         try {
-            return this.restOperations.exchange(request, OAuth2AccessTokenResponse.class);
+            response = this.restOperations.exchange(request, OAuth2AccessTokenResponse.class);
         } catch (RestClientException ex) {
             OAuth2Error oauth2Error = new OAuth2Error(INVALID_TOKEN_RESPONSE_ERROR_CODE,
                     "An error occurred while attempting to retrieve the OAuth 2.0 Access Token Response: "
@@ -95,6 +96,11 @@ public class InstagramAuthorizationCodeTokenResponseClient implements OAuth2Acce
                     null);
             throw new OAuth2AuthorizationException(oauth2Error, ex);
         }
+        return response;
+//        try {
+//            request.
+//            response = this.restOperations.exchange()
+//        }
     }
 
     /**

@@ -14,26 +14,47 @@ logging.level.org.springframework.security: TRACE
 
 
 spring.security.oauth2.client:
-    registration:
-      google:
-        client-id: ${GOOGLE_CLIENT_ID:client-id}
-        client-secret: ${GOOGLE_CLIENT_SECRET:client-secret}
-      instagram:
-        provider: instagram
-        client-name: instagram
-        client-id: ${INST_CLIENT_ID:client-id}
-        client-secret: ${INST_CLIENT_SECRET:client-secret}
-        redirect-uri: https://localhost:8443/login/oauth2/code/instagram
-        authorization-grant-type: authorization_code
-        client-authentication-method: client_secret_post
-        scope: user_profile,user_media
-    provider:
-      instagram:
-        authorization-uri: https://api.instagram.com/oauth/authorize
-        token-uri: https://api.instagram.com/oauth/access_token
-        user-info-uri: https://graph.instagram.com
-        user-info-authentication-method: post
-        user-name-attribute: id
+  registration:
+    google:
+      client-id: ${GOOGLE_CLIENT_ID:client-id}
+      client-secret: ${GOOGLE_CLIENT_SECRET:client-secret}
+    instagram:
+      provider: instagram
+      client-name: instagram
+      client-id: ${INST_CLIENT_ID:client-id}
+      client-secret: ${INST_CLIENT_SECRET:client-secret}
+      redirect-uri: https://localhost:8443/login/oauth2/code/instagram
+      authorization-grant-type: authorization_code
+      client-authentication-method: client_secret_post
+      scope: user_profile,user_media,instagram_graph_user_profile,instagram_graph_user_media
+  provider:
+    instagram:
+      authorization-uri: https://api.instagram.com/oauth/authorize
+      token-uri: https://api.instagram.com/oauth/access_token
+      user-info-uri: https://graph.instagram.com
+      configuration-metadata: '{"long-token-uri":"https://graph.instagram.com/access_token"}'
+      user-info-authentication-method: post
+      user-name-attribute: id
+
+weaver.security.oauth2.client:
+  registration:
+    instagram:
+      provider: instagram
+      client-name: instagram
+      client-id: ${INST_CLIENT_ID:client-id}
+      client-secret: ${INST_CLIENT_SECRET:client-secret}
+      redirect-uri: https://localhost:8443/login/oauth2/code/instagram
+      authorization-grant-type: authorization_code
+      client-authentication-method: client_secret_post
+      scope: user_profile,user_media,instagram_graph_user_profile,instagram_graph_user_media
+  provider:
+    instagram:
+      authorization-uri: https://api.instagram.com/oauth/authorize
+      token-uri: https://api.instagram.com/oauth/access_token
+      user-info-uri: https://graph.instagram.com
+      configuration-metadata: '{"long-token-uri":"https://graph.instagram.com/access_token"}'
+      user-info-authentication-method: post
+      user-name-attribute: id
 #
 #
 #spring.security.oauth2.client.registration.linkedin.provider=linkedin
