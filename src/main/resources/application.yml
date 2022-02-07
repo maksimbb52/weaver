@@ -15,9 +15,9 @@ logging.level.org.springframework.security: TRACE
 
 spring.security.oauth2.client:
   registration:
-    google:
-      client-id: ${GOOGLE_CLIENT_ID:client-id}
-      client-secret: ${GOOGLE_CLIENT_SECRET:client-secret}
+#    google:
+#      client-id: ${GOOGLE_CLIENT_ID:client-id}
+#      client-secret: ${GOOGLE_CLIENT_SECRET:client-secret}
     instagram:
       provider: instagram
       client-name: instagram
@@ -52,7 +52,9 @@ weaver.security.oauth2.client:
       authorization-uri: https://api.instagram.com/oauth/authorize
       token-uri: https://api.instagram.com/oauth/access_token
       user-info-uri: https://graph.instagram.com
-      configuration-metadata: '{"long-token-uri":"https://graph.instagram.com/access_token"}'
+      configuration-metadata:
+        long-lived-token-uri: https://graph.instagram.com/access_token
+        grant-type: ig_exchange_token
       user-info-authentication-method: post
       user-name-attribute: id
 #

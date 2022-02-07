@@ -1,9 +1,7 @@
 package com.maksimbb52.weaver.impl.config.security;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
@@ -11,16 +9,14 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
+import org.springframework.security.oauth2.core.AuthenticationMethod;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
-import org.springframework.security.oauth2.core.oidc.IdTokenClaimNames;
 import org.springframework.security.oauth2.core.user.OAuth2User;
-import org.springframework.util.StringUtils;
-
-import java.util.Map;
 
 @Configuration
 @EnableWebSecurity
@@ -44,6 +40,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .authenticated()
                 .and()
                 .oauth2Login()
+                .clientRegistrationRepository(instagramClientRegistration())
                 .userInfoEndpoint()
                 .userService(oAuth2UserService())
                 .and()
@@ -51,26 +48,39 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .accessTokenResponseClient(new InstagramAuthorizationCodeTokenResponseClient());
     }
 
-//    @Bean
-//    public ClientRegistrationRepository instagramClientRegistration() {
-//        OAuth2ClientProperties.Registration instagramRegistration = oAuth2ClientProperties.getRegistration().get("instagram");
-//        OAuth2ClientProperties.Provider instagramProvider = oAuth2ClientProperties.getProvider().get("instagram");
-//        if (instagramProvider == null || instagramRegistration == null) {
-//            throw new IllegalStateException("Instagram provider was not found in application configuration");
-//        }
-//
-//        return ClientRegistration.withRegistrationId("instagram")
-//                .providerConfigurationMetadata(instagramProvider.getConfigurationMetadata())
-//                .clientId(instagramRegistration.getClientId())
-//                .authorizationGrantType(new AuthorizationGrantType(instagramRegistration.getAuthorizationGrantType()))
-//                .authorizationUri(instagramProvider.getAuthorizationUri())
-//                .build();
-//
-//    }
+    @Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        super.configure(auth);
+    }
+
+    private ClientRegistrationRepository instagramClientRegistration() {
+        OAuth2ClientProperties.Registration instagramRegistration = oAuth2ClientProperties.getRegistration().get("instagram");
+        OAuth2ClientProperties.Provider instagramProvider = oAuth2ClientProperties.getProvider().get("instagram");
+        if (instagramProvider == null || instagramRegistration == null) {
+            throw new IllegalStateException("Instagram provider was not found in application configuration");
+        }
+
+        return new InMemoryClientRegistrationRepository(ClientRegistration.withRegistrationId("instagram")
+                .providerConfigurationMetadata(instagramProvider.getConfigurationMetadata())
+                .clientId(instagramRegistration.getClientId())
+                .authorizationGrantType(new AuthorizationGrantType(instagramRegistration.getAuthorizationGrantType()))
+                .authorizationUri(instagramProvider.getAuthorizationUri())
+                .clientAuthenticationMethod(new ClientAuthenticationMethod(instagramRegistration.getClientAuthenticationMethod()))
+                .clientSecret(instagramRegistration.getClientSecret())
+                .clientName(instagramRegistration.getClientName())
+                .redirectUri(instagramRegistration.getRedirectUri())
+                .scope(instagramRegistration.getScope())
+                .tokenUri(instagramProvider.getTokenUri())
+                .userInfoAuthenticationMethod(new AuthenticationMethod(instagramProvider.getUserInfoAuthenticationMethod()))
+                .userInfoUri(instagramProvider.getUserInfoUri())
+                .userNameAttributeName(instagramProvider.getUserNameAttribute())
+                .build());
+
+    }
 
     private OAuth2UserService<OAuth2UserRequest, OAuth2User> oAuth2UserService() {
         DefaultOAuth2UserService oAuth2UserService = new DefaultOAuth2UserService();
-        oAuth2UserService.setRequestEntityConverter(new InstagramOAuth2UserShortRequestEntityConverter());
+        oAuth2UserService.setRequestEntityConverter(new InstagramOAuth2UserRequestEntityConverter());
         return oAuth2UserService;
     }
 

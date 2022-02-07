@@ -1,6 +1,8 @@
 package com.maksimbb52.weaver.impl.config.security;
 
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.SneakyThrows;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -23,7 +25,9 @@ import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResp
 import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequestEntityConverter;
 import org.springframework.security.oauth2.client.http.OAuth2ErrorResponseErrorHandler;
+import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
+import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2AuthorizationException;
 import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AccessTokenResponse;
@@ -54,12 +58,17 @@ public class InstagramAuthorizationCodeTokenResponseClient implements OAuth2Acce
     private static final String INVALID_TOKEN_RESPONSE_ERROR_CODE = "invalid_token_response";
 
     private Converter<OAuth2AuthorizationCodeGrantRequest, RequestEntity<?>> requestEntityConverter = new OAuth2AuthorizationCodeGrantRequestEntityConverter();
+    private InstagramOAuth2ExchangeTokenGrantRequestEntityConverter requestLongLivedEntityConverter = new InstagramOAuth2ExchangeTokenGrantRequestEntityConverter();
 
     private RestOperations restOperations;
 
     public InstagramAuthorizationCodeTokenResponseClient() {
         RestTemplate restTemplate = new RestTemplate(clientHttpRequestFactory());
-        restTemplate.setMessageConverters(Arrays.asList(new FormHttpMessageConverter(), new InstagramOAuth2AccessTokenResponseHttpMessageConverter()));
+        restTemplate.setMessageConverters(Arrays.asList(
+                new FormHttpMessageConverter(),
+                new InstagramOAuth2AccessTokenResponseHttpMessageConverter(),
+                new InstagramExchangeTokenResponseHttpMessageConverter()
+        ));
         restTemplate.setErrorHandler(new OAuth2ErrorResponseErrorHandler());
         this.restOperations = restTemplate;
     }
@@ -68,39 +77,58 @@ public class InstagramAuthorizationCodeTokenResponseClient implements OAuth2Acce
     public OAuth2AccessTokenResponse getTokenResponse(
             OAuth2AuthorizationCodeGrantRequest authorizationCodeGrantRequest) {
         Assert.notNull(authorizationCodeGrantRequest, "authorizationCodeGrantRequest cannot be null");
-        RequestEntity<?> request = this.requestEntityConverter.convert(authorizationCodeGrantRequest);
-        ResponseEntity<OAuth2AccessTokenResponse> response = getResponse(request);
-        OAuth2AccessTokenResponse tokenResponse = response.getBody();
-        if (CollectionUtils.isEmpty(tokenResponse.getAccessToken().getScopes())) {
+
+        RequestEntity<?> requestShortLivedToken = this.requestEntityConverter.convert(authorizationCodeGrantRequest);
+        OAuth2AccessTokenResponse responseShort = getShortResponse(requestShortLivedToken).getBody();
+
+        RequestEntity<?> requestLongLivedToken = this.requestLongLivedEntityConverter.convert(authorizationCodeGrantRequest, responseShort.getAccessToken().getTokenValue());
+        InstagramExchangeTokenResponse responseLong = getLongResponse(requestLongLivedToken).getBody();
+
+        OAuth2AccessTokenResponse response = OAuth2AccessTokenResponse.withToken(responseLong.getAccessToken())
+                .tokenType(OAuth2AccessToken.TokenType.BEARER)
+                .expiresIn(responseLong.getExpiresIn() / 2)
+                .additionalParameters(responseShort.getAdditionalParameters())
+                .build();
+
+        if (CollectionUtils.isEmpty(response.getAccessToken().getScopes())) {
             // As per spec, in Section 5.1 Successful Access Token Response
             // https://tools.ietf.org/html/rfc6749#section-5.1
             // If AccessTokenResponse.scope is empty, then default to the scope
             // originally requested by the client in the Token Request
             // @formatter:off
-            tokenResponse = OAuth2AccessTokenResponse.withResponse(tokenResponse)
+            response = OAuth2AccessTokenResponse.withResponse(response)
                     .scopes(authorizationCodeGrantRequest.getClientRegistration().getScopes())
                     .build();
             // @formatter:on
         }
-        return tokenResponse;
+        return response;
     }
 
-    private ResponseEntity<OAuth2AccessTokenResponse> getResponse(RequestEntity<?> request) {
-        ResponseEntity<OAuth2AccessTokenResponse> response;
+    private ResponseEntity<OAuth2AccessTokenResponse> getShortResponse(RequestEntity<?> request) {
         try {
-            response = this.restOperations.exchange(request, OAuth2AccessTokenResponse.class);
-        } catch (RestClientException ex) {
+            return this.restOperations.exchange(request, OAuth2AccessTokenResponse.class);
+        }
+        catch (RestClientException ex) {
             OAuth2Error oauth2Error = new OAuth2Error(INVALID_TOKEN_RESPONSE_ERROR_CODE,
                     "An error occurred while attempting to retrieve the OAuth 2.0 Access Token Response: "
                             + ex.getMessage(),
                     null);
             throw new OAuth2AuthorizationException(oauth2Error, ex);
         }
-        return response;
-//        try {
-//            request.
-//            response = this.restOperations.exchange()
-//        }
+    }
+
+    @SneakyThrows
+    private ResponseEntity<InstagramExchangeTokenResponse> getLongResponse(RequestEntity<?> request) {
+        try {
+            return this.restOperations.getForEntity(request.getUrl(), InstagramExchangeTokenResponse.class);
+        }
+        catch (RestClientException ex) {
+            OAuth2Error oauth2Error = new OAuth2Error(INVALID_TOKEN_RESPONSE_ERROR_CODE,
+                    "An error occurred while attempting to retrieve the OAuth 2.0 Access Token Response after instagram exchange: "
+                            + ex.getMessage(),
+                    null);
+            throw new OAuth2AuthorizationException(oauth2Error, ex);
+        }
     }
 
     /**

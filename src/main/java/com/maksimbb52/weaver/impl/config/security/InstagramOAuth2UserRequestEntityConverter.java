@@ -16,6 +16,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.util.Collections;
+import java.util.Map;
 
 public class InstagramOAuth2UserRequestEntityConverter implements Converter<OAuth2UserRequest, RequestEntity<?>> {
 
@@ -28,9 +29,10 @@ public class InstagramOAuth2UserRequestEntityConverter implements Converter<OAut
         HttpMethod httpMethod = getHttpMethod(clientRegistration);
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+        Map<String, Object> additionalParameters = userRequest.getAdditionalParameters();
         URI uri = UriComponentsBuilder
                 .fromUriString(clientRegistration.getProviderDetails().getUserInfoEndpoint().getUri())
-                .path(userRequest.getAdditionalParameters().get("user_id").toString())
+                .path(additionalParameters.getOrDefault("user_id", additionalParameters.get("id")).toString())
                 .queryParam("fields", "id,username")
                 .queryParam(OAuth2ParameterNames.ACCESS_TOKEN, userRequest.getAccessToken().getTokenValue())
                 .build()
