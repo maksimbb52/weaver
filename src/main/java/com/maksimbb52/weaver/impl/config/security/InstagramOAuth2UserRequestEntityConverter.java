@@ -7,7 +7,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
-import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequestEntityConverter;
 import org.springframework.security.oauth2.core.AuthenticationMethod;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.util.LinkedMultiValueMap;
@@ -33,7 +32,7 @@ public class InstagramOAuth2UserRequestEntityConverter implements Converter<OAut
         URI uri = UriComponentsBuilder
                 .fromUriString(clientRegistration.getProviderDetails().getUserInfoEndpoint().getUri())
                 .path(additionalParameters.getOrDefault("user_id", additionalParameters.get("id")).toString())
-                .queryParam("fields", "id,username")
+                .queryParam("fields", "account_type,id,media_count,username")
                 .queryParam(OAuth2ParameterNames.ACCESS_TOKEN, userRequest.getAccessToken().getTokenValue())
                 .build()
                 .toUri();
